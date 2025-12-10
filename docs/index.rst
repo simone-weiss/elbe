@@ -1,12 +1,19 @@
 ..
   SPDX-License-Identifier: GPL-3.0-or-later
   SPDX-FileCopyrightText: Linutronix GmbH
+..
 
-ELBE docs
-==========
+===============================
+ELBE Documentation
+===============================
+
+Welcome to the ELBE documentation.  
+This documentation covers how to use ELBE to build root-filesystem images for embedded devices, define your build projects via XML, and reference all ELBE commands and schema.  
+
+If you are new to ELBE, we recommend starting with the **Quickstart** and **Overview** 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    article-quickstart
    article-elbeoverview-en
@@ -32,7 +39,7 @@ ELBE docs
 
 .. toctree::
    :maxdepth: 1
-   :caption: updated commands
+   :caption: update commands
 
    elbe-gen_update
    elbe-updated
