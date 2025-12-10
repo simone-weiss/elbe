@@ -2,146 +2,126 @@
 ELBE Quickstart
 ************************
 
-You have probably received a root filesystem, which has been built with
-ELBE. Additionally, you should have an XML file describing the root
-filesystem.
+This guide explains how to build a root filesystem using ELBE from an XML
+file, and how to make basic customizations.
 
-This quickstart guide describes the steps necessary to rebuild the
-root-filesystem from the XML file and to simple modifications.
+====================
+Required steps
+====================
 
-Steps necessary
-===============
+1. If not installed already, install **Debian 12 (bookworm)** or later on your
+   host. The latest ELBE version should be compatible with this system.
 
-1. install Debian 12 (bookworm) or later on your Host. The latest version
-   of elbe should be compatible with this system.
+2. Install **ELBE** on the host system.
 
-2. install ELBE on Host Linux
+3. Generate the **initvm** — a dedicated virtual machine that runs the build
+   environment.
 
-3. generate the ``initvm`` running the build environment
+4. Build the root filesystem inside the initvm.
 
-4. build the root filesystem inside the initvm
-
-Steps 1,2 and 3 need only be performed once.
+Steps **1–3 only need to be performed once** unless the environment is recreated.
 
 .. note::
-
-   When Debian is running inside a VM (vmware etc), you should make
-   sure, that nested KVM is working. Otherwise builds will be slow.
+   If Debian is running inside a virtual machine (VMware, etc.), ensure that
+   nested KVM is enabled. Without hardware virtualization support,
+   builds will be significantly slower.
 
 .. note::
-
-   As of Windows 11 version 24H2 ELBE can be used with the Windows Subsystem
-   for Linux 2 (WSL2) by installing Debian bookworm through the Microsoft Store.
-
-Customization of the build
-==========================
-
-The ELBE XML can contain an archive, which can contain configuration
-files, and additional software. This archive is extracted onto the
-target-image during the buildprocess. It allows you to override any
-file, which needs to be different from the default Debian Install.
-
-This guide also explains how the archive can be extracted from the XML
-file, and vice versa.
-
-ELBE allows manipulating the generated root filesystem through a set of
-``<finetuning>`` rules. We also describe, how these can be used to add a
-user, change directory permissions, and remove files from the root
-filesystem.
-
+   As of Windows 11 24H2, ELBE can also be used under WSL2 by installing
+   Debian Bookworm from the Microsoft Store.
 .. _installation:
 
+====================
 Installing ELBE
-===============
+====================
 
-There are several possibilities to install ELBE. The simplest method is
-by installing prebuilt binary packages via Linutronix package repository
-on a Debian 12 (bookworm) system.
+There are two ways to install ELBE:
 
-But ELBE can also be installed from git.
+1. install prebuilt Debian packages from Linutronix, or
+2. build ELBE from the upstream git repository.
 
-Binary Debian packages
-----------------------
+-------------------------
+Binary Debian Packages
+-------------------------
 
 Repository
 ~~~~~~~~~~
 
-The latest packages for elbe reside in the following repository
+The latest ELBE packages are available from:
 
 ::
 
    http://debian.linutronix.de/elbe
 
-It can be enabled conveniently with the ``extrepo`` utility.
+This repository can be enabled using the `extrepo` utility:
 
 ::
 
    # apt install extrepo
    # extrepo enable elbe
 
-Repository (manual)
-~~~~~~~~~~~~~~~~~~~
+Repository (manual setup)
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If ``extrepo`` does not work for you, set up the repository manually.
+If `extrepo` is not working for you, configure the repository manually.
 
 Install the repository key to a known place (as root):
 
 ::
 
-   # apt install elbe-archive-keyring || wget -O /usr/share/keyrings/elbe-archive-keyring.gpg http://debian.linutronix.de/elbe/elbe-repo.pub.gpg
+   # apt install elbe-archive-keyring || \
+     wget -O /usr/share/keyrings/elbe-archive-keyring.gpg \
+     http://debian.linutronix.de/elbe/elbe-repo.pub.gpg
 
-Add the following content to the file ``/etc/apt/sources.list``
+Add the repository to /etc/apt/sources.list:
 
 ::
 
-   # echo "deb [signed-by=/usr/share/keyrings/elbe-archive-keyring.gpg] http://debian.linutronix.de/elbe bookworm main" >> /etc/apt/sources.list
+   # echo "deb [signed-by=/usr/share/keyrings/elbe-archive-keyring.gpg] \
+     http://debian.linutronix.de/elbe bookworm main" \
+     >> /etc/apt/sources.list
 
-Setup
-~~~~~
-
-Then run (as root):
+Install ELBE (as root):
 
 ::
 
    # apt update
    # apt install elbe
 
-Create initvm and submit XML files
-==================================
+============================================
+Creating the initvm and Submitting XML Files
+============================================
 
-The first thing you need to do is set up a virtual-machine for
-generating root-filesystems.
+The **initvm** is a virtual machine used exclusively by ELBE to build
+root filesystems. It should match the host architecture so that hardware
+virtualization (KVM) can be used.
 
-This virtual-machine is referred to as ``initvm``. You will want your
-initvm to be the same architecture as your workstation. This allows
-using hardware accelerated virtualization implemented by kvm.
-
-To work with virtual machines as a regular user, the user needs to be
-added to kvm and libvirt groups:
+To allow your user to manage VMs:
 
 ::
 
    # adduser <youruser> kvm
    # adduser <youruser> libvirt
 
-Now create an ``initvm`` subdirectory and builds the initvm inside this
-directory.
+Then create the initvm:
 
 ::
 
-    $ elbe initvm create
-    *****
+   $ mkdir initvm
+   $ cd initvm
+   $ elbe initvm create
 
+======================
 Submitting an XML file
 ======================
 
-Submitting an XML file triggers an image build inside the initvm. Once
+Submitting an XML file triggrts an image inside the initvmi. Once
 the initvm has been created and is running, you can submit XML files
-using
+using:
 
 ::
 
-    $ elbe initvm submit examples/x86_64-pc-rescue-busybox-dyn-cpio.xml
+   $ elbe initvm submit examples/x86_64-pc-rescue-busybox-dyn-cpio.xml
     Build started, waiting till it finishes
     [INFO] Build started
     [INFO] ELBE Report for Project x86_64-rescue-image
@@ -196,72 +176,87 @@ using
     Getting generated Files
 
     Saving generated Files to elbe-build-20220801-095330
-    source.xml     (Current source.xml of the project)
-    rescue.cpio    (Image)
-    licence-chroot.txt     (License file)
-    licence-chroot.xml     (xml License file)
-    licence-target.txt     (License file)
-    licence-target.xml     (xml License file)
-    validation.txt         (Package list validation result)
-    elbe-report.txt        (Report)
-    log.txt        (Log file)
-    bin-cdrom.iso  (Repository IsoImage)
-    src-cdrom-target.iso   (Repository IsoImage)
-    src-cdrom-main.iso     (Repository IsoImage)
-    src-cdrom-added.iso    (Repository IsoImage)
+    source.xml              (Current source.xml of the project)
+    rescue.cpio             (Image)
+    licence-chroot.txt      (License file)
+    licence-chroot.xml      (xml License file)
+    licence-target.txt      (License file)
+    licence-target.xml      (xml License file)
+    validation.txt          (Package list validation result)
+    elbe-report.txt         (Report)
+    log.txt                 (Log file)
+    bin-cdrom.iso           (Repository IsoImage)
+    src-cdrom-target.iso    (Repository IsoImage)
+    src-cdrom-main.iso      (Repository IsoImage)
+    src-cdrom-added.iso     (Repository IsoImage)
 
 The result of the build is stored in elbe-build-<TIMESTAMP> below your
 current working directory.
 
-Ports opened by initvm
-======================
+====================================
+Ports Opened by the initvm
+====================================
 
-The initvm will open port 7587 on localhost. This is used by the elbe
-tools on your host to communicate with the initvm.
+The initvm will open:
 
-Advanced usage
-==============
+- **localhost:7587** — used by ELBE on your host to communicate with the initvm.
 
+==========================
+Customization of the Build
+==========================
+
+The ELBE XML can contain an **archive** element which includes configuration
+files, and additional software. This archive is unpacked onto the target image
+during the buildprocess. It allows you override any file provided from the default
+Debian Install.
+
+This section shows how to:
+
+- extract the archive from the XML file,
+- repack the archive back into the XML,
+- apply customizations using `<finetuning>` rules.
+
+Finetuning allows modifying the generated root filesystem to among other things:
+
+- add users,
+- remove files,
+- adjust permissions,
+- execute commands during the build.
+
+
+---------------------
 ELBE Archive
-------------
+---------------------
 
-The ELBE XML file can contain an archivedir which is copied into the
-root-filesystem during the image generation phase.
-
-It is done with the following XML node:
+An ELBE XML can include one or more `archivedir` entries:
 
 .. code:: xml
 
    <archivedir>foo</archivedir>
 
-archivedir
-----------
+Content from archivedirs is copied into the target filesystem during build.
+If multiple archivedirs are specified, later ones override conflicting files.
 
-The new XML element ‘archivedir’ points to a local directory and adds
-the content into a newly created archive. ‘archivedir’ can be specified
-more than once. The content of the directories is copied in order of
-appearance. Existing files are overwritten by the later ones.
-
-Example snippet to use ‘archivedir’:
+Example:
 
 .. code:: xml
 
    <archivedir>foo</archivedir>
    <archivedir variant="production">bar</archivedir>
 
-Adding packages to the "list of packages to install"
-----------------------------------------------------
+--------------------------------------------
+Adding packages to the installation List
+--------------------------------------------
 
-The XML file contains a *list of packages to install* ``<pkg-list>`` in
-the ``<target>`` XML node. Inserting a line containing
+Packages are listed inside `<pkg-list>` under the `<target>` XML node.
+To install e.g. util-linux to the target-rfs:
 
 .. code:: xml
 
    <pkg>util-linux</pkg>
 
-will add the ``util-linux`` package to the target-rfs.
-
-Using the finetuning rules
+--------------------------
+Using Finetuning Rules
 --------------------------
 
 An ELBE XML file can contain a set of finetuning rules. Finetuning is
@@ -272,8 +267,8 @@ example finetuning from
 .. code:: xml
 
    <finetuning>
-           <rm>var/cache/apt/archives/*.deb</rm>
-           <adduser passwd="elbe" shell="/bin/bash">elbe</adduser>
+       <rm>var/cache/apt/archives/*.deb</rm>
+       <adduser passwd="elbe" shell="/bin/bash">elbe</adduser>
    </finetuning>
 
 rm
@@ -313,8 +308,10 @@ attribute in the XML.
 
 .. code:: xml
 
-   <adduser passwd_hashed="$6$rounds=656000$7vWuOPVX0YKaISh5$cJhevq/z7kJ215n18dnksv/zOeUf6uPoLgICwLeTSu/2xoLHkyYQABaM7a99sQmpilCV.SlK9jfHZz3m7/s2a." shell="/bin/bash">elbe</adduser>
+   <adduser passwd_hashed="$6$rounds=656000$7vWuOPVX0YKaISh5$cJhevq/z7kJ215n18dnksv/zOeUf6uPoLgICwLeTSu/2xoLHkyYQABaM7a99sQmpilCV.SlK9jfHZz3m7/s2a."
+            shell="/bin/bash">elbe</adduser>
 
+------------------------------------------
 Changing ownership of directories or files
 ------------------------------------------
 
@@ -331,8 +328,9 @@ Further Example
 ~~~~~~~~~~~~~~~
 
 A more complete example can be found in the ELBE overview document that
-is installed at ``/usr/share/doc/elbe-doc/elbeoverview-en.html``
+is installed at ``/usr/share/doc/elbe-doc/elbeoverview-en.html``.
 
+===============================
 Using the Elbe Pbuilder Feature
 ===============================
 
@@ -365,7 +363,7 @@ Here is an example:
 
    $ elbe pbuilder create --xmlfile examples/x86_64-pc-rescue-busybox-dyn-cpio.xml --writeproject ../pbuilder.prj
    $ git clone https://github.com/Linutronix/libgpio.git
-   $ cd  libgpio/
+   $ cd libgpio/
    $ elbe pbuilder build --project `cat ~/repos/elbe/pbuilder.prj` --out ../out/
 
 With these steps, elbe builds the libgpio project inside the initvm and
@@ -402,14 +400,16 @@ profiles:
    $ cd linux*/
    $ ../elbe pbuilder --cross --origfile ../linux*.orig.tar.xz --profile nodoc,nopython build --project `cat ../pbuilder.prj`
 
+===================
 Custom Repository
-=================
+===================
 
 You might have your own packages which should be installed into your
 image. This can be done with a custom repository. You can use
 `reprepro <https://mirrorer.alioth.debian.org/>`__ to create your own
 repository or the above mentioned pbuilder feature.
 
+--------------
 Repository Key
 --------------
 
@@ -457,6 +457,7 @@ used to export the public key into a repo.pub file.
 
    gpg --export --armor CF837F1AAAC35E084062AE4468E68615BB6CB47C > repo.pub
 
+----------------------
 reprepro configuration
 ----------------------
 
@@ -477,7 +478,6 @@ follows:
    SignWith: CF837F1AAAC35E084062AE4468E68615BB6CB47C
 
 .. note::
-
    the ``SignWith:`` field needs to be the key of the previously
    generated key.
 
@@ -488,9 +488,10 @@ put ``repo.pub`` into your ``repo`` directory.
 
    repo/
    ├── conf
-   │   └── distributions
+   │   └── distributions
    └── repo.pub
 
+---------------------
 insert pkgs into repo
 ---------------------
 
@@ -510,11 +511,11 @@ use the following to access the repository:
 .. code:: xml
 
    <url-list>
-           <url>
-                   <binary>http://LOCALMACHINE/repo/ bookworm main</binary>
-                   <source>http://LOCALMACHINE/repo/ bookworm main</source>
-                   <key>http://LOCALMACHINE/repo/repo.pub</key>
-           </url>
+       <url>
+           <binary>http://LOCALMACHINE/repo/ bookworm main</binary>
+           <source>http://LOCALMACHINE/repo/ bookworm main</source>
+           <key>http://LOCALMACHINE/repo/repo.pub</key>
+       </url>
    </url-list>
 
 ELBE replaces the string ``LOCALMACHINE`` with the ip address of your
